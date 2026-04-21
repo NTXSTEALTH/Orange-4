@@ -181,21 +181,62 @@ int head_update(const ObjectID *new_commit) {
 
 // ─── TODO: Implement these ───────────────────────────────────────────────────
 
-// Create a new commit from the current staging area.
-//
-// HINTS - Useful functions to call:
-//   - tree_from_index   : writes the directory tree and gets the root hash
-//   - head_read         : gets the parent commit hash (if any)
-//   - pes_author        : retrieves the author name string (from pes.h)
-//   - time(NULL)        : gets the current unix timestamp
-//   - commit_serialize  : converts the filled Commit struct to a text buffer
-//   - object_write      : saves the serialized text as OBJ_COMMIT
-//   - head_update       : moves the branch pointer to your new commit
-//
-// Returns 0 on success, -1 on error.
-int commit_create(const char *message, ObjectID *commit_id_out) {
-    // TODO: Implement commit creation
-    // (See Lab Appendix for logical steps)
-    (void)message; (void)commit_id_out;
-    return -1;
+// Helper to get the author string from PES_AUTHOR environment variable
+static void get_author(char *author_buf, size_t size) {
+    const char *env_author = getenv("PES_AUTHOR");
+    if (env_author) {
+        snprintf(author_buf, size, "%s", env_author);
+    } else {
+        snprintf(author_buf, size, "HARISH <PES2UG24AM229@pes.edu>");
+    }
 }
+
+// Create a new commit from the current staging area.
+int commit_create(const char *message, ObjectID *commit_id_out) {
+    // Step 1: Build a tree from the index
+    ObjectID tree_id;
+    if (tree_from_index(&tree_id) != 0) {
+        return -1;
+    }
+    
+    // Step 2: Get the parent commit hash (if any)
+    ObjectID parent_id;
+    int has_parent = 0;
+    if (head_read(&parent_id) == 0) {
+        has_parent = 1;
+    }
+    
+    // Step 3: Get author information and timestamp
+    Commit commit = {0};
+    commit.tree = tree_id;
+    commit.has_parent = has_parent;
+    if (has_parent) {
+        commit.parent = parent_id;
+    }
+    get_author(commit.author, sizeof(commit.author));
+    commit.timestamp = time(NULL);
+    snprintf(commit.message, sizeof(commit.message), "%s", message);
+    
+    // Step 4: Serialize the commit
+    void *commit_data;
+    size_t commit_len;
+    if (commit_serialize(&commit, &commit_data, &commit_len) != 0) {
+        return -1;
+    }
+    
+    // Step 5: Write the commit object
+    if (object_write(OBJ_COMMIT, commit_data, commit_len, commit_id_out) != 0) {
+        free(commit_data);
+        return -1;
+    }
+    
+    // Step 6: Update HEAD to point to the new commit
+    if (head_update(commit_id_out) != 0) {
+        free(commit_data);
+        return -1;
+    }
+    
+    free(commit_data);
+    return 0;
+}
+

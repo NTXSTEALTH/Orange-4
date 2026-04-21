@@ -7,8 +7,8 @@ test_objects: test_objects.o object.o
 test_tree: test_tree.o object.o tree.o index.o
 	$(CC) -o test_tree test_tree.o object.o tree.o index.o -lcrypto
 
-pes: pes.c index.o object.o commit.o
-	$(CC) $(CFLAGS) pes.c index.o object.o commit.o -o pes -lcrypto
+pes: pes.c index.o object.o commit.o tree.o
+	$(CC) $(CFLAGS) pes.c index.o object.o commit.o tree.o -o pes -lcrypto
 
 object.o: object.c
 	$(CC) $(CFLAGS) -c object.c -o object.o
