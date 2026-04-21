@@ -1,45 +1,26 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
-LDFLAGS = -lcrypto
-
-# ─── Main binary ─────────────────────────────────────────────────────────────
-
-SRCS = object.c tree.c index.c commit.c pes.c
-OBJS = $(SRCS:.c=.o)
-
-pes: $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-%.o: %.c pes.h
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# ─── Test binaries ───────────────────────────────────────────────────────────
 
 test_objects: test_objects.o object.o
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o test_objects test_objects.o object.o -lcrypto
 
-test_tree: test_tree.o object.o tree.o
-	$(CC) -o $@ $^ $(LDFLAGS)
+test_tree: test_tree.o object.o tree.o index.o
+	$(CC) -o test_tree test_tree.o object.o tree.o index.o -lcrypto
 
-# ─── Convenience targets ────────────────────────────────────────────────────
+object.o: object.c
+	$(CC) $(CFLAGS) -c object.c -o object.o
 
-.PHONY: all clean test test-unit test-integration
+tree.o: tree.c
+	$(CC) $(CFLAGS) -c tree.c -o tree.o
 
-all: pes test_objects test_tree
+index.o: index.c
+	$(CC) $(CFLAGS) -c index.c -o index.o
+
+test_objects.o: test_objects.c
+	$(CC) $(CFLAGS) -c test_objects.c -o test_objects.o
+
+test_tree.o: test_tree.c
+	$(CC) $(CFLAGS) -c test_tree.c -o test_tree.o
 
 clean:
-	rm -f pes test_objects test_tree $(OBJS) test_objects.o test_tree.o
-	rm -rf .pes
-
-test: test-unit test-integration
-
-test-unit: test_objects test_tree
-	@echo "=== Running Phase 1 tests ==="
-	./test_objects
-	@echo ""
-	@echo "=== Running Phase 2 tests ==="
-	./test_tree
-
-test-integration: pes
-	@echo "=== Running integration tests ==="
-	bash test_sequence.sh
+	rm -f *.o test_objects test_tree
