@@ -28,5 +28,8 @@ test_objects.o: test_objects.c
 test_tree.o: test_tree.c
 	$(CC) $(CFLAGS) -c test_tree.c -o test_tree.o
 
+test-integration:
+	bash test_sequence.sh
+
 clean:
 	rm -f *.o test_objects test_tree pes
