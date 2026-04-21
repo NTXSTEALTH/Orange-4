@@ -10,6 +10,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <ctype.h>
+#include <time.h>
 
 // ─── PROVIDED: Command Implementations ──────────────────────────────────────
 
@@ -90,7 +92,22 @@ static void print_commit(const ObjectID *id, const Commit *commit, void *ctx) {
     hash_to_hex(id, hex);
     printf("commit %s\n", hex);
     printf("Author: %s\n", commit->author);
-    printf("Date:   %llu\n", (unsigned long long)commit->timestamp);
+
+    time_t timestamp = (time_t)commit->timestamp;
+    struct tm tm;
+    if (localtime_r(&timestamp, &tm) != NULL) {
+        char date_buf[64];
+        if (strftime(date_buf, sizeof(date_buf), "%B %d %Y", &tm) > 0) {
+            for (char *p = date_buf; *p; ++p) {
+                *p = (char)tolower((unsigned char)*p);
+            }
+            printf("Date:   %s\n", date_buf);
+        } else {
+            printf("Date:   %llu\n", (unsigned long long)commit->timestamp);
+        }
+    } else {
+        printf("Date:   %llu\n", (unsigned long long)commit->timestamp);
+    }
     printf("\n    %s\n\n", commit->message);
 }
 
@@ -130,3 +147,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
